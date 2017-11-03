@@ -27,12 +27,13 @@ class LSTM:
             Y = tf.placeholder(tf.float32, [None, 1])
 
             # build a LSTM network
-            cell = tf.contrib.rnn.BasicLSTMCell(
-                num_units=self.default_par['hidden_dim'], state_is_tuple=True, activation=self.default_par['activation'])
-            with tf.variable_scope('{}'.format(i)):
-                outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
-            Y_pred = tf.contrib.layers.fully_connected(
-                outputs[:, -1], self.default_par['output_dim'], activation_fn=None)  # We use the last cell's output
+            if self.par['num_hidden'] == 1:
+                cell = tf.contrib.rnn.BasicLSTMCell(
+                    num_units=self.default_par['hidden_dim'], state_is_tuple=True, activation=self.default_par['activation'])
+                with tf.variable_scope('{}'.format(i)):
+                    outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+                Y_pred = tf.contrib.layers.fully_connected(
+                    outputs[:, -1], self.default_par['output_dim'], activation_fn=None)  # We use the last cell's output
     
             # cost/loss
             loss = tf.reduce_sum(tf.square(Y_pred - Y))  # sum of the squares
@@ -69,10 +70,12 @@ class LSTM:
             # data_processing3()
             self.trainX, self.testX, self.trainY, self.testY = util.data_processing3(dataX, dataY)
             
+            print(self.trainX)
+            print(self.trainX.shape)
             # LSTM training and test
             _result_predict = self.LSTM_train_and_infer(i)
             _result_true = self.testY
-            print("successfully train {}th/{}th sub RNN model".format(i, len(self.root_data) - self.par['seq_length']))
+            print("successfully train {}th/{}th sub RNN model".format(i, 2170 - self.par['seq_length']))
             self.result_predict.append(_result_predict)
             self.result_true.append(_result_true)
             
@@ -87,7 +90,9 @@ class LSTM:
         self.result_predict = util.ReverseScaler(self.result_predict, original_price_data)
         self.result_true = util.ReverseScaler(self.result_true, original_price_data)
     
-        plot_name = str(self.par['seq_length'])+'_'+str(self.par['sub_seq_length'])+'_'+str(self.par['iteration'])
+        plot_name = str(self.par['data_type']) \
+                    + '_' + str(self.par['seq_length']) + '_' + str(self.par['sub_seq_length']) \
+                    + '_' + str(self.par['iterations']) + '_' + str(self.par['num_hidden'])  
         np.savetxt(self.par['save_path']+'output_predict_{}.csv'.format(plot_name),self.result_predict)
         np.savetxt(self.par['save_path']+'output_true_{}.csv'.format(plot_name),self.result_true)
         np.savetxt(self.par['save_path']+'output_time_{}.csv'.format(plot_name),self.result_time)
